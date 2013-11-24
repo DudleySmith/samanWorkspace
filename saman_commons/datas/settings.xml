@@ -1,0 +1,29 @@
+<Settings>
+	<oscSettings>
+		<Host>localhost</Host>
+		<Set>saman</Set>
+		<PortIn>9001</PortIn>
+		<PortOut>9000</PortOut>
+		<Host_OSC>xxx</Host_OSC>
+		<Set_OSC>xxx</Set_OSC>
+	</oscSettings>
+
+	<others>
+		<Connections_PXws/>
+		<Data_Path>/Users/dudleysmith/Dude_s_Place/_OF/0.8.0/apps/saman/saman_commons/datas</Data_Path>
+		<USB_Connection>tty.usbserial-A600KMNU</USB_Connection>
+		<Background_Image>imageSansLumiere.jpg</Background_Image>
+		<Animations/>
+		<DropDuration>2</DropDuration>
+		<DropSmoothness>0.1</DropSmoothness>
+	<DropDuration_Min>0.55</DropDuration_Min>
+		<DropDuration_Max>1.5</DropDuration_Max>
+		<DispCorrection>0.002</DispCorrection>
+	<DispGenCorrection>0.00833333</DispGenCorrection>
+		<DispNodeCorrection>0.0463333</DispNodeCorrection>
+	<Verbose>1</Verbose>
+		<LogToFile>0</LogToFile>
+		<log_file>log_20131123.log</log_file>
+	</others>
+		
+</Settings>

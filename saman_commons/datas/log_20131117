@@ -1,0 +1,36 @@
+
+
+--------------------------------------- 2013-11-18-08-22-44-806
+[verbose] This pin will change : 0004:2
+[verbose] Sending : [0004OUTALL002015]
+[verbose] This pin will change : 0004:3
+[verbose] Sending : [0004OUTALL003000]
+[verbose] This pin will change : 0005:2
+[verbose] Sending : [0005OUTALL002236]
+[verbose] This pin will change : 0006:2
+[verbose] Sending : [0006OUTALL002015]
+[verbose] This pin will change : 0006:3
+[verbose] Sending : [0006OUTALL003004]
+[notice ] OSC Message [1] : /saman/params/0006/intensity arg_0:0.0617945
+[notice ] OSC Message [2] : /saman/params/0005/intensity arg_0:0.928501
+[notice ] OSC Message [3] : /saman/params/0004/intensity arg_0:0.0617945
+[notice ] OSC Message [4] : /saman/params/0005/intensity arg_0:0.834273
+[notice ] OSC Message [5] : /saman/params/0005/intensity arg_0:0.77538
+[notice ] OSC Message [6] : /saman/params/0005/intensity arg_0:0.681152
+[notice ] OSC Message [7] : /saman/params/0005/intensity arg_0:0.62226
+[notice ] OSC Message [8] : /saman/params/0005/intensity arg_0:0.528032
+[notice ] OSC Message [9] : /saman/params/0005/intensity arg_0:0.469139
+[notice ] OSC Message [10] : /saman/params/0005/intensity arg_0:0.374911
+[notice ] OSC Message [11] : /saman/params/0005/intensity arg_0:0.292461
+[notice ] OSC Message [12] : /saman/params/0005/intensity arg_0:0.233569
+[notice ] OSC Message [13] : /saman/params/0005/intensity arg_0:0.174676
+[notice ] OSC Message [14] : /saman/params/0005/intensity arg_0:0.080448
+[notice ] OSC Message [15] : /saman/params/0005/intensity arg_0:0.310703
+[notice ] OSC Message [16] : /saman/params/0005/intensity arg_0:0.287327
+[notice ] OSC Message [17] : /saman/params/0005/intensity arg_0:0.275639
+[notice ] OSC Message [18] : /saman/params/0005/intensity arg_0:0.256938
+[notice ] OSC Message [19] : /saman/params/0005/intensity arg_0:0.245251
+[notice ] OSC Message [20] : /saman/params/0005/intensity arg_0:0.22655
+[verbose] ofAppGLFWWindow: key: 256 state: 1
+[verbose] KEY PRESSED : 27
+[verbose] ofEvents: OF app is being terminated!
