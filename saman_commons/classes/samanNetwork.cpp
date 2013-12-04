@@ -124,15 +124,31 @@ void samanNetwork::drawANode(ofxXbeeNode _nodeToDraw, ofPoint _pos, float _xSize
             // --------------------------------------------------------------------
             
         } else if (_nodeToDraw.getPins()[idxPin].getMode() == pinModeDrop) {
-            
+            /*
             float   dropRatio = _nodeToDraw.getPins()[idxPin].getValue()/(float)VAL_MAX;
             ofPoint dropPosition = dropRatio*startPt + (1-dropRatio)*endPt;
+            */
+            
+            string keyAnim = _nodeToDraw.getID() + ":" + ofToString(idxPin, 0, 2, '0') + ":Drop";
+            map<string, ofxAnimatableFloat>::iterator   oneAnim;
+            
+            oneAnim = m_aAnims.find(keyAnim);
+            
+            if(oneAnim!=m_aAnims.end() && (*oneAnim).second.isAnimating()){
+                float   dropRatio = (*oneAnim).second.val();
+                ofPoint dropPosition = dropRatio*startPt + (1-dropRatio)*endPt;
+                
+                ofSetColor(ofColor::white);
+                if(dropRatio<1) ofCircle(dropPosition, 3);
+                
+            }
+            
+            
             
             //ofLogVerbose() << "Drop Ratio : " << dropRatio << "Drop pos : " << dropPosition;
             
             // --------------------------------------------------------------------
-            ofSetColor(ofColor::white);
-            if(dropRatio<1) ofCircle(dropPosition, 3);
+
             // --------------------------------------------------------------------
             
         } else {
@@ -162,8 +178,8 @@ void samanNetwork::setupANode(string _nodeID){
     setupANodePin(_nodeID, 7);
     setupANodePin(_nodeID, 8);
     setupANodePin(_nodeID, 9);
-    setupANodePin(_nodeID, 10);
-    setupANodePin(_nodeID, 11);
+    //setupANodePin(_nodeID, 10);
+    //setupANodePin(_nodeID, 11);
 
 }
 
@@ -177,7 +193,7 @@ void samanNetwork::setupANodePin(string _nodeID, int _pinNumber){
     registerNodePin(_nodeID, _pinNumber, pinModePwm);
     
     m_aAnims[animKey] = ofxAnimatableFloat();
-    m_aAnims[animKey].setRepeatType(PLAY_ONCE);
+    m_aAnims[animKey].setRepeatType(LOOP);
     m_aAnims[animKey].setCurve(EASE_IN);
     
 }
@@ -222,6 +238,36 @@ void samanNetwork::animateDrop(string _nodeID, int _pinNumber, float _dropDurati
     m_aAnims[_nodeID+":"+ofToString(_pinNumber, 0, 2, '0')+":Drop"].setDuration(_dropDuration);
     m_aAnims[_nodeID+":"+ofToString(_pinNumber, 0, 2, '0')+":Drop"].reset(0);
     m_aAnims[_nodeID+":"+ofToString(_pinNumber, 0, 2, '0')+":Drop"].animateFromTo(0, 1);
+}
+
+// -----------------------------------------------------------------
+void samanNetwork::startDrop(string _nodeID, int _pinNumber, float _dropDuration){
+    
+    string keyAnim = _nodeID + ":" + ofToString(_pinNumber, 0, 2, '0') + ":Drop";
+    map<string, ofxAnimatableFloat>::iterator   oneAnim;
+    
+    oneAnim = m_aAnims.find(keyAnim);
+    
+    if(oneAnim!=m_aAnims.end() && (*oneAnim).second.hasFinishedAnimating()){
+        m_aAnims[keyAnim].setDuration(_dropDuration);
+        m_aAnims[keyAnim].reset(0);
+        m_aAnims[keyAnim].animateFromTo(0, 1);
+    }
+    
+}
+
+// -----------------------------------------------------------------
+void samanNetwork::stopDrop(string _nodeID, int _pinNumber){
+    
+    string keyAnim = _nodeID + ":" + ofToString(_pinNumber, 0, 2, '0') + ":Drop";
+    map<string, ofxAnimatableFloat>::iterator   oneAnim;
+    
+    oneAnim = m_aAnims.find(keyAnim);
+    
+    if(oneAnim!=m_aAnims.end()){
+        m_aAnims[keyAnim].reset(0);
+    }
+    
 }
 
 // -----------------------------------------------------------------

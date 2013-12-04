@@ -30,7 +30,10 @@ public:
     // Animations object to drive boards -------------------
     map<string, ofxAnimatableFloat> m_aAnims;
     void animateDrop(string _nodeID, int _pinNumber, float _dropDuration);
+    void startDrop(string _nodeID, int _pinNumber, float _dropDuration);
+    void stopDrop(string _nodeID, int _pinNumber);
     
+
     float lastTime;
     
     ofxXbeeNode getANode(string _nodeID);

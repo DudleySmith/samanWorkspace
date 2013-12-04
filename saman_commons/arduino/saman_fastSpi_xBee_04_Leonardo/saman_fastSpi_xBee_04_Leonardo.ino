@@ -1,10 +1,9 @@
-
 #include "ofxXbeeDummyProtocolDefine.h"
 #include "FastSPI_LED2.h"
 
-#define     NUM_LEDS 60
+#define     NUM_LEDS 48
 
-const int   nbSecondsToStartUp = 1;
+const int   nbSecondsToStartUp = 5;
 const int   greenPin = 12; // led sign for good infos -> Green
 const int   redPin = 13; // led sign for good infos -> Red
 
@@ -25,9 +24,10 @@ CRGB leds_6[NUM_LEDS];
 CRGB leds_7[NUM_LEDS];
 CRGB leds_8[NUM_LEDS];
 CRGB leds_9[NUM_LEDS];
+/*
 CRGB leds_10[NUM_LEDS];
 CRGB leds_11[NUM_LEDS];
-
+*/
 #define nbLoopsForHeartBeat 10000
 double nbLoops;
 
@@ -45,6 +45,7 @@ void setup() {
   pinMode(pinInA1, INPUT);
   pinMode(pinInA2, INPUT);
   pinMode(pinInA3, INPUT);
+  
   // Initialize LEDS
   isBad();
   setupLEDS();
@@ -97,6 +98,7 @@ void loop() {
     Serial1.println(reading);
     Serial1.println();
     */
+    
     int posHead = 0;
     int posTail = 0; 
     int count = 0; 
@@ -106,15 +108,16 @@ void loop() {
       posHead = reading.indexOf("[", posTail);
       posTail = reading.indexOf("]", posHead); 
       
-      String msg = reading.substring(posHead, posTail+1);
       /*
       Serial1.println("-------------------------");
       Serial1.println(posHead);
       Serial1.println(posTail);
       */
+      
       if(posHead!=-1 && posTail!=-1){
         //Serial1.println("+++++++++++++++++++++++++++");
         //Serial1.println(count++);
+        String msg = reading.substring(posHead, posTail+1);
         Serial1.println(msg);
         
         doYourStuffWithMessage(msg);
@@ -144,7 +147,7 @@ void doYourStuffWithMessage(String _message){
     // On controle l'entete
     // On controle l'ID
     sIDReceived = _message.substring(CARDID_BEG,CARDID_BEG+CARDID_LEN);
-    if(sIDReceived == sXbeeID){
+    if(sIDReceived == sXbeeID && _message.length()==8){
       // On cherche le big Mode
       Mode  = _message.substring(MODE_BEG,MODE_BEG+MODE_LEN);
       pinNum    = _message.substring(PIN_BEG,PIN_BEG+PIN_LEN).toInt();
@@ -214,12 +217,14 @@ CRGB* getArray(int _pinNum){
     case 9:
       return leds_9;
       break;
+      /*
     case 10:
       return leds_10;
       break;
     case 11:
       return leds_11;
       break;
+      */
     default:
       return leds_2;
   }
@@ -254,16 +259,15 @@ void setupLEDS() {
   delay(2000);
 
   // For safety (to prevent too high of a power draw), the test case defaults to
-  // setting brightness to 25% brightness
-  LEDS.addLeds<WS2812B, 2>(leds_2, NUM_LEDS);
-  LEDS.addLeds<WS2812B, 3>(leds_3, NUM_LEDS);
+  LEDS.addLeds<WS2811, 2>(leds_2, NUM_LEDS);
+  LEDS.addLeds<WS2811, 3>(leds_3, NUM_LEDS);
+  LEDS.addLeds<WS2811, 4>(leds_4, NUM_LEDS);
+  LEDS.addLeds<WS2811, 5>(leds_5, NUM_LEDS);
+  LEDS.addLeds<WS2811, 6>(leds_6, NUM_LEDS);
+  LEDS.addLeds<WS2811, 7>(leds_7, NUM_LEDS);
+  LEDS.addLeds<WS2811, 8>(leds_8, NUM_LEDS);
+  LEDS.addLeds<WS2811, 9>(leds_9, NUM_LEDS);
   /*
-  LEDS.addLeds<WS2812B, 4>(leds_4, NUM_LEDS);
-  LEDS.addLeds<WS2812B, 5>(leds_5, NUM_LEDS);
-  LEDS.addLeds<WS2812B, 6>(leds_6, NUM_LEDS);
-  LEDS.addLeds<WS2812B, 7>(leds_7, NUM_LEDS);
-  LEDS.addLeds<WS2812B, 8>(leds_8, NUM_LEDS);
-  LEDS.addLeds<WS2812B, 9>(leds_9, NUM_LEDS);
   LEDS.addLeds<WS2812B, 10>(leds_10, NUM_LEDS);
   LEDS.addLeds<WS2812B, 11>(leds_11, NUM_LEDS);
   */

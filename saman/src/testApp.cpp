@@ -81,6 +81,8 @@ void testApp::setupGui(){
     m_pnSettings.add(m_pxDropSmoothness.set("DropSmoothness", 0.1, 0, 1));
     m_pnSettings.add(m_pxDispGenCorrection.set("DispGenCorrection", 0.05, 0, 0.1));
     m_pnSettings.add(m_pxDispNodeCorrection.set("DispNodeCorrection", 0.05, 0, 0.1));
+    m_pnSettings.add(m_pxIntensityMin.set("Intensity Min", 0, 0, 1));
+    m_pnSettings.add(m_pxIntensityMax.set("Intensity Max", 1, 0, 1));
 
     m_pnSettings.loadFromFile("settings.xml");
     
@@ -112,7 +114,13 @@ void testApp::update(){
     m_lbSet = m_oOsc.getSet();
     updateGui();
     
-    // Update network : Send / Read
+    // --
+    m_oOsc.update(m_pxMaxMessagesOsc);
+
+    // OSC
+    updateOscInput();
+
+    // Update network : Send / Read --
     m_oXbees.update(m_pxMaxMessagesXbee);
     
 }
@@ -122,10 +130,8 @@ void testApp::updateOscInput(){
     
     string nameKey = "";
     float value0 = 0;
-    double duration = 0;
+    //double duration = 0;
     
-    // --
-    m_oOsc.update(m_pxMaxMessagesOsc);
     
     // --
     float genIntensity = m_oOsc.getConstValue("/params/general/intensity");
@@ -153,6 +159,8 @@ void testApp::updateOscInput(){
         float nodeDispersion = m_oOsc.getConstValue("/params/"+(*oneNode).first+"/disp");
         float nodeDispersionMin = m_oOsc.getConstValue("/params/"+(*oneNode).first+"/dispMin");
         
+
+        
         nodeDispersion = ofMap(nodeDispersion, 0, 1, m_pxDispNodeCorrection, 1);
         
         // Check all messages --
@@ -172,32 +180,70 @@ void testApp::updateOscInput(){
             
             // On envoie alors le message ---------------------------------
             // Si une animation est en cours, c'est de la goutte de pluie, sinon c'est whole strip
+            
             string keyAnim = (*oneNode).first + ":" + ofToString((*onePin).first, 0, 2, '0') + ":Drop";
             map<string, ofxAnimatableFloat>::iterator   oneAnim;
             
             oneAnim = m_oXbees.m_aAnims.find(keyAnim);
             
+            // new drop
+            /*
+            float dropOnOff = m_oOsc.getConstValue("/drops/onoff/"+(*oneNode).first+"/"+ofToString((*onePin).first));
+            
+            if(dropOnOff==1){
+                
+             
+                if(fabs(m_pxDropDurationMax-m_pxDropDurationMin)>FLT_EPSILON){
+                    // --
+                    duration = ofMap(dropTime, 0, 1, m_pxDropDurationMax, m_pxDropDurationMin, true);
+                }
+                
+                m_oXbees.startDrop((*oneNode).first, (*onePin).first, duration);
+                
+             
+            }else if(dropOnOff==0){
+                m_oXbees.stopDrop((*oneNode).first, (*onePin).first);
+                
+                //m_oXbees.sendNodeDrop((*oneNode).first, (*onePin).first, 0);
+                //m_oXbees.setNodeDrop((*oneNode).first, (*onePin).first, 0);
+                
+            }
+            */
+            
             // --
-            bool isDropEvent = m_oOsc.getEvent("drops", nameKey, value0);
-            if (isDropEvent) {
+            bool isDropEvent = m_oOsc.getEvent("onoff", nameKey, value0);
+            float dropTime = m_oOsc.getConstValue("/drops/time/"+(*oneNode).first+"/"+ofToString((*onePin).first));
+            
+            
+            if (isDropEvent==true) {
                 // ----------------------------------------------------
-                // DROP ANIMATION -------------------------------------
-                if(oneAnim != m_oXbees.m_aAnims.end()){
-                    if(m_oXbees.m_aAnims[keyAnim].hasFinishedAnimating()){
-                        if(fabs(m_pxDropDurationMax-m_pxDropDurationMin)>FLT_EPSILON){
-                            // --
-                            duration = ofMap(value0, 0, 1, m_pxDropDurationMax, m_pxDropDurationMin, true);
-                        }else{
-                            duration = m_pxDropDurationMax;
-                        }
+                if(value0==1){
+                    
+                    float duration = m_pxDropDurationMax;
+                    
+                    if(fabs(m_pxDropDurationMax-m_pxDropDurationMin)>FLT_EPSILON){
                         // --
-                        ofLogVerbose() << " :" << duration;
-                        m_oXbees.animateDrop((*oneNode).first, (*onePin).first, duration);
+                        duration = ofMap(value0, 0, 1, m_pxDropDurationMax, m_pxDropDurationMin, true);
+                    }else{
+                        duration = m_pxDropDurationMax;
                     }
+                    
+                    m_oXbees.startDrop((*oneNode).first, (*onePin).first, duration);
+                    
+                    m_oXbees.sendNodeDrop((*oneNode).first, (*onePin).first, value0);
+                    m_oXbees.setNodeDrop((*oneNode).first, (*onePin).first, value0);
+                    
+                }else if (value0==0){
+                    
+                    m_oXbees.stopDrop((*oneNode).first, (*onePin).first);
+                    
+                    m_oXbees.sendNodeDrop((*oneNode).first, (*onePin).first, 0);
+                    m_oXbees.setNodeDrop((*oneNode).first, (*onePin).first, 0);
+                    
                 }
                 
             }else{
-                
+            
                 // ----------------------------------------------------
                 // GLOBAL COMMAND -------------------------------------
                 // --
@@ -226,13 +272,25 @@ void testApp::updateOscInput(){
                 genPinValue *= genIntensity;
                 //--
                 
-                stripLightness = nodeMix*nodePinValue + (1-nodeMix)*genPinValue;
+                stripLightness = ofMap(nodeMix*nodePinValue + (1-nodeMix)*genPinValue, 0, 1, m_pxIntensityMin, m_pxIntensityMax);
+                
+                // For animation
+                if(stripLightness>0.5){
+                    m_oXbees.sendNodePwm((*oneNode).first, (*onePin).first, 1);
+                    m_oXbees.setNodeAllStrip((*oneNode).first, (*onePin).first, 1);
+                }else{
+                    m_oXbees.sendNodePwm((*oneNode).first, (*onePin).first, 0);
+                    m_oXbees.setNodeAllStrip((*oneNode).first, (*onePin).first, 0);
+                }
+                
+                
                 //ofLogVerbose() << " : " << (*oneNode).first<< " : " <<(*onePin).first<< " : " << stripLightness;
                 
             }
             
             // We can not send every 25 fps, arduino can not folllow !!!!!!!!
             //
+            /*
             bool bSendForReal = false;
             
             // Time Frequency Mode
@@ -240,7 +298,7 @@ void testApp::updateOscInput(){
             if(ofGetFrameNum()%iSkipFrequency == 0){
                 bSendForReal = true;
             }
-             
+            */
             /*
             // Only one node after all
             int idxNode_A = 1+ofGetFrameNum()%(int)(0.5*m_oXbees.getNodes().size());
@@ -255,27 +313,27 @@ void testApp::updateOscInput(){
                 ofLogVerbose() << "Only this node will be realy updated : " << (*oneNode).first;
             }
             */
-            //bSendForReal=true;
+            /*
+            bSendForReal=true;
             
             if(oneAnim != m_oXbees.m_aAnims.end()){
                 if(m_oXbees.m_aAnims[keyAnim].isAnimating()){
                     // For communication ----------
                     if(bSendForReal==true){
-                        m_oXbees.sendNodeDrop((*oneNode).first, (*onePin).first, m_oXbees.m_aAnims[keyAnim].val());
+                        //m_oXbees.sendNodeDrop((*oneNode).first, (*onePin).first, m_oXbees.m_aAnims[keyAnim].val());
                     }
                     // For animation
-                    m_oXbees.setNodeDrop((*oneNode).first, (*onePin).first, m_oXbees.m_aAnims[keyAnim].val());
+                    //m_oXbees.setNodeDrop((*oneNode).first, (*onePin).first, m_oXbees.m_aAnims[keyAnim].val());
                 }else{
                     // For communication ----------
                     if(bSendForReal==true){
-                        m_oXbees.sendNodePwm((*oneNode).first, (*onePin).first, stripLightness);
+                        //m_oXbees.sendNodePwm((*oneNode).first, (*onePin).first, stripLightness);
                     }
                     // For animation
-                    m_oXbees.setNodeAllStrip((*oneNode).first, (*onePin).first, stripLightness);
+                    //m_oXbees.setNodeAllStrip((*oneNode).first, (*onePin).first, stripLightness);
                 }
             }
-    
-            
+            */
             idxNodePin++;
             idxGeneralPin++;
             
@@ -313,9 +371,7 @@ void testApp::draw(){
     
     m_oBackgroundImage.draw(0, 0);
     
-    // OSC
-    updateOscInput();
-
+    
     // GUI --
     if (m_bDisplayGui==true) {
         // Display OSC messages
@@ -347,16 +403,15 @@ void testApp::draw(){
         
     }else{
         
-        ofDrawBitmapString("$ to show GUI", 10, ofGetHeight() - 10);
+        ofDrawBitmapString("Type letter [h] to show GUI", 10, ofGetHeight() - 10);
     }
     
     // Arbres ˆ gauche
-    m_oXbees.drawANode(m_oXbees.getANode(m_lbRecep01), ofPoint(10,100), 200, 340);
+    m_oXbees.drawANode(m_oXbees.getANode(m_lbRecep01), ofPoint(010,100), 200, 340);
     m_oXbees.drawANode(m_oXbees.getANode(m_lbRecep02), ofPoint(130,182), 150, 300);
     m_oXbees.drawANode(m_oXbees.getANode(m_lbRecep03), ofPoint(210,266), 130, 240);
     m_oXbees.drawANode(m_oXbees.getANode(m_lbRecep04), ofPoint(280,310), 130, 200);
     m_oXbees.drawANode(m_oXbees.getANode(m_lbRecep05), ofPoint(350,385), 110, 160);
-    
     // Arbres ˆ droite
     m_oXbees.drawANode(m_oXbees.getANode(m_lbRecep06), ofPoint(505,350), 190, 240);
     m_oXbees.drawANode(m_oXbees.getANode(m_lbRecep07), ofPoint(710,290), 250, 300);
@@ -398,9 +453,10 @@ void testApp::keyReleased(int key){
     
     ofLogVerbose() << "KEY RELEASED : " << key;
     
-    if (key == 93) {
+    if (key == 'h') {
         m_bDisplayGui = !m_bDisplayGui;
     }
+    
 }
 
 //--------------------------------------------------------------

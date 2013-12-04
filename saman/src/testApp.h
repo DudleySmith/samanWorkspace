@@ -51,6 +51,8 @@ public:
     ofParameter<float>  m_pxDropSmoothness;
     ofParameter<float>  m_pxDispGenCorrection;
     ofParameter<float>  m_pxDispNodeCorrection;
+    ofParameter<float>  m_pxIntensityMin;
+    ofParameter<float>  m_pxIntensityMax;
     
     // Networks of arduino boards
     samanNetwork                  m_oXbees;

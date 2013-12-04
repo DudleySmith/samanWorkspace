@@ -2,7 +2,7 @@
 #include "ofxXbeeDummyProtocolDefine.h"
 #include "FastSPI_LED2.h"
 
-#define     NUM_LEDS 32
+#define     NUM_LEDS 60
 
 const int   nbSecondsToStartUp = 5;
 const int   greenPin = 12; // led sign for good infos -> Green
@@ -81,16 +81,16 @@ void setupLEDS() {
 
   // For safety (to prevent too high of a power draw), the test case defaults to
   // setting brightness to 25% brightness
-  LEDS.addLeds<WS2811, 2>(leds_2, NUM_LEDS);
-  LEDS.addLeds<WS2811, 3>(leds_3, NUM_LEDS);
-  LEDS.addLeds<WS2811, 4>(leds_4, NUM_LEDS);
-  LEDS.addLeds<WS2811, 5>(leds_5, NUM_LEDS);
-  LEDS.addLeds<WS2811, 6>(leds_6, NUM_LEDS);
-  LEDS.addLeds<WS2811, 7>(leds_7, NUM_LEDS);
-  LEDS.addLeds<WS2811, 8>(leds_8, NUM_LEDS);
-  LEDS.addLeds<WS2811, 9>(leds_9, NUM_LEDS);
-  LEDS.addLeds<WS2811, 10>(leds_10, NUM_LEDS);
-  LEDS.addLeds<WS2811, 11>(leds_11, NUM_LEDS);
+  LEDS.addLeds<WS2812B, 2>(leds_2, NUM_LEDS);
+  LEDS.addLeds<WS2812B, 3>(leds_3, NUM_LEDS);
+  LEDS.addLeds<WS2812B, 4>(leds_4, NUM_LEDS);
+  LEDS.addLeds<WS2812B, 5>(leds_5, NUM_LEDS);
+  LEDS.addLeds<WS2812B, 6>(leds_6, NUM_LEDS);
+  LEDS.addLeds<WS2812B, 7>(leds_7, NUM_LEDS);
+  LEDS.addLeds<WS2812B, 8>(leds_8, NUM_LEDS);
+  LEDS.addLeds<WS2812B, 9>(leds_9, NUM_LEDS);
+  LEDS.addLeds<WS2812B, 10>(leds_10, NUM_LEDS);
+  LEDS.addLeds<WS2812B, 11>(leds_11, NUM_LEDS);
   
   allLEDS(getArray(2), 0);
   allLEDS(getArray(3), 0);

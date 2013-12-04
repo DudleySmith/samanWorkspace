@@ -1,0 +1,7 @@
+
+#Ableton Live Project, no sounds please
+*.wav
+*.mp3
+*.flac
+*.aif
+*.asd

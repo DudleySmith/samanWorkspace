@@ -1,10 +1,10 @@
 
-#include "ofxXbeeDummyProtocolDefine.h"
+//#include "ofxXbeeDummyProtocolDefine.h"
 #include "FastSPI_LED2.h"
 
-#define     NUM_LEDS 60
+#define     NUM_LEDS 50
 
-const int   nbSecondsToStartUp = 1;
+const int   nbSecondsToStartUp = 2;
 const int   greenPin = 12; // led sign for good infos -> Green
 const int   redPin = 13; // led sign for good infos -> Red
 
@@ -16,6 +16,9 @@ const int   pinInA3 = A3; // led sign for good infos -> Red
 const CRGB  white = CRGB(255,255,255);
 
 const int  basicSmoothness = 10;
+const int  basicBrightness = 10;
+const int  basicFPSForLeds = 20;
+const int  maxCharReceived = 500;
 
 CRGB leds_2[NUM_LEDS];
 CRGB leds_3[NUM_LEDS];
@@ -26,14 +29,17 @@ CRGB leds_7[NUM_LEDS];
 CRGB leds_8[NUM_LEDS];
 CRGB leds_9[NUM_LEDS];
 CRGB leds_10[NUM_LEDS];
-CRGB leds_11[NUM_LEDS];
 
 #define nbLoopsForHeartBeat 10000
 double nbLoops;
 
-String sXbeeID;
-String reading="";
-      
+String sXbeeID="";
+String sReading="";
+
+unsigned long lastCounterMillis;
+int  value = 0;
+boolean isDrop = false;
+
 void setup() {
   
   nbLoops = 0;
@@ -45,10 +51,6 @@ void setup() {
   pinMode(pinInA1, INPUT);
   pinMode(pinInA2, INPUT);
   pinMode(pinInA3, INPUT);
-  // Initialize LEDS
-  isBad();
-  setupLEDS();
-  isGood();
   
   // initialize serial communication:
   for(int nbLoopsStart=0; nbLoopsStart<=nbSecondsToStartUp; nbLoopsStart++){
@@ -58,106 +60,155 @@ void setup() {
     delay(500);
   }
   
+  // Init Serial
   Serial1.begin(9600);
   while(!Serial1){
     isBad();
+    delay(250);
     isGood();
-    isBad();
+    delay(250);
   }
-  Serial1.println("----------------------------- Init --");
+  
+  Serial1.println("Init LEDS ------------------------");
+  
+  // Initialize LEDS
+  isBad();
+  setupLEDS();
+  isGood();
   
   nbLoops = 0;
+  sReading = "";
+  
   isGoodBad();
   
+  Serial1.println("Init Done ------------------------");
+  Serial1.println("Version 22");
+}
+
+void setupLEDS() {
+  // sanity check delay - allows reprogramming if accidently blowing power w/leds
+  delay(2000);
+
+  // For safety (to prevent too high of a power draw), the test case defaults to
+  // setting brightness to 25% brightness
+  
+  LEDS.addLeds<WS2811, 2>(leds_2, NUM_LEDS);
+  LEDS.addLeds<WS2811, 3>(leds_3, NUM_LEDS);
+  LEDS.addLeds<WS2811, 4>(leds_4, NUM_LEDS);
+  LEDS.addLeds<WS2811, 5>(leds_5, NUM_LEDS);
+  LEDS.addLeds<WS2811, 6>(leds_6, NUM_LEDS);
+  LEDS.addLeds<WS2811, 7>(leds_7, NUM_LEDS);
+  LEDS.addLeds<WS2811, 8>(leds_8, NUM_LEDS);
+  LEDS.addLeds<WS2811, 9>(leds_9, NUM_LEDS);
+  //LEDS.addLeds<WS2811, 10>(leds_10, NUM_LEDS);
+  //LEDS.addLeds<WS2811, 11>(leds_11, NUM_LEDS);
+
+  LEDS.setBrightness(0);    
+  LEDS.show();
+  LEDS.setBrightness(basicBrightness);
 }
 
 void loop() {
   
-  boolean bMessageReceived = false;
-  
   // Sending heartbeat every n loops
-  nbLoops++;
-  if(nbLoops>nbLoopsForHeartBeat){
-    nbLoops = 0;
-    sXbeeID = getXbeeID();
-    isGoodBad();
-    Serial1.println(HEAD + sXbeeID + HEARTBEAT + TAIL);
-  }
-  
-  int  nbReceived = Serial1.available();
-  if(nbReceived>0){
-  
-    char received[nbReceived];
-    
-    Serial1.readBytes(received, nbReceived);
-    reading += String(received);
-    
-    /*
-    Serial1.println("-- Reading ------------------");
-    Serial1.println(reading);
-    Serial1.println();
-    */
-    int posHead = 0;
-    int posTail = 0; 
-    int count = 0; 
+  sXbeeID = getXbeeID();
 
-    while(posHead != -1){
-      
-      posHead = reading.indexOf("[", posTail);
-      posTail = reading.indexOf("]", posHead); 
-      
-      String msg = reading.substring(posHead, posTail+1);
-      /*
-      Serial1.println("-------------------------");
-      Serial1.println(posHead);
-      Serial1.println(posTail);
-      */
-      if(posHead!=-1 && posTail!=-1){
-        //Serial1.println("+++++++++++++++++++++++++++");
-        //Serial1.println(count++);
-        Serial1.println(msg);
-        
-        doYourStuffWithMessage(msg);
-        
-        bMessageReceived = true;
-    
+  value++;
+  if(value>=100){
+    value=0;
+    if(isDrop==true){
+      isDrop=false;
+    }else{
+      isDrop=true;
+    }
+  }
+  
+  String msg = "";
+  msg += "ID : ";
+  msg += sXbeeID;
+  msg += "Value : ";
+  msg += String(value);
+  msg += " : ";
+  if(isDrop==true){
+    msg += "Drop";
+  }else{
+    msg += "All";
+  }
+  Serial1.println(msg);
+  
+  for(int pinNum=2; pinNum<11; pinNum++){
+    if(isDrop==true){
+      drop(getArray(pinNum), value, basicSmoothness);
+    }else{
+      allLEDS(getArray(pinNum), value);
+    }
+  }   
+  
+  LEDS.show();
+  
+  /*
+  // Receiving message character 1 by 1 --
+  while(Serial1.available()>0){
+    // Reading a char --
+    sReading += (char)Serial1.read();
+    //Serial1.println(sReading);
+    // --
+    /*
+    if(sReading.length()>=maxCharReceived){
+      Serial1.println("Max chars acheived ----------------");
+      sReading = "";
+      break;
+    }
+    */
+    /*
+    if(sReading.startsWith("[")){
+      // Good Message, how is the tail ?
+      if(sReading.endsWith("]")){
+        isGood();
+        // The tail is good
+        // We can treat
+        //doYourStuffWithMessage(sReading);
+        doYourStuffWithMessage();
+        // and reset
+        sReading = "";
       }
-    }   
+    }else{
+      isGoodBad();
+      // Bad message --
+      // We reset
+      sReading = "";
+    }
   }
-  
-  if(bMessageReceived==true){
-    reading = "";
-  }
-  
+  */
 }  
 
-void doYourStuffWithMessage(String _message){
-   
-  bool idControl = false;
-  String sIDReceived;
-  String Mode = "";
-  int    pinNum = 0;
-  int    value = 0;
+//void doYourStuffWithMessage(String _message){
+void doYourStuffWithMessage(){
   
-  //Serial1.println(_message);
+  String sIDReceived="";
   
+  //Serial1.println("Message : ");
+  Serial1.println(sReading);
+
     // On controle l'entete
     // On controle l'ID
-    sIDReceived = _message.substring(CARDID_BEG,CARDID_BEG+CARDID_LEN);
+    sIDReceived = sReading.substring(1,2);
+    String Mode = sReading.substring(2,3);
+    int    pinNum = sReading.substring(3,5).toInt();
+    int    value = sReading.substring(5,7).toInt();
+    
+    Serial1.println(sIDReceived);
+    //Serial1.println(sXbeeID);
+    
     if(sIDReceived == sXbeeID){
       // On cherche le big Mode
-      Mode  = _message.substring(MODE_BEG,MODE_BEG+MODE_LEN);
-      pinNum    = _message.substring(PIN_BEG,PIN_BEG+PIN_LEN).toInt();
-      value      = _message.substring(VAL_BEG,VAL_BEG+VAL_LEN).toInt();
-      /*
-      Serial1.println(sXbeeID);
       Serial1.println(Mode);
       Serial1.println(pinNum);
       Serial1.println(value);
-      */
+      
       // GOOD DATAS ----------------
       // We're driving outputs
-      if(Mode==Mode_All){
+      if(Mode=="A"){
         /*
         The whole strip
         [4A0200]
@@ -166,9 +217,9 @@ void doYourStuffWithMessage(String _message){
         */
         isGood();
         allLEDS(getArray(pinNum), value);
-        LEDS.show();
+        Serial1.println("Ok All");
       }
-      else if(Mode==Mode_Drop){
+      else if(Mode=="D"){
         /*
         Drop mode
         [0D0299]
@@ -176,14 +227,14 @@ void doYourStuffWithMessage(String _message){
         */ 
         isGood();
         drop(getArray(pinNum), value, basicSmoothness);
-        LEDS.show();
+        Serial1.println("Ok Drop");
       }else{
         isBad();
+        Serial1.println("Ko");
       }
-     }else{
-        isBad();
-     }
-    
+   }else{
+     isBad();
+   }
 }
 
 // LEDS Section -----------------------------------
@@ -217,9 +268,11 @@ CRGB* getArray(int _pinNum){
     case 10:
       return leds_10;
       break;
+      /*
     case 11:
       return leds_11;
       break;
+      */
     default:
       return leds_2;
   }
@@ -248,41 +301,6 @@ void drop(CRGB _leds[NUM_LEDS], int _position, int _smoothness){
   
   
 }
-
-void setupLEDS() {
-  // sanity check delay - allows reprogramming if accidently blowing power w/leds
-  delay(2000);
-
-  // For safety (to prevent too high of a power draw), the test case defaults to
-  // setting brightness to 25% brightness
-  LEDS.addLeds<WS2812B, 2>(leds_2, NUM_LEDS);
-  LEDS.addLeds<WS2812B, 3>(leds_3, NUM_LEDS);
-  /*
-  LEDS.addLeds<WS2812B, 4>(leds_4, NUM_LEDS);
-  LEDS.addLeds<WS2812B, 5>(leds_5, NUM_LEDS);
-  LEDS.addLeds<WS2812B, 6>(leds_6, NUM_LEDS);
-  LEDS.addLeds<WS2812B, 7>(leds_7, NUM_LEDS);
-  LEDS.addLeds<WS2812B, 8>(leds_8, NUM_LEDS);
-  LEDS.addLeds<WS2812B, 9>(leds_9, NUM_LEDS);
-  LEDS.addLeds<WS2812B, 10>(leds_10, NUM_LEDS);
-  LEDS.addLeds<WS2812B, 11>(leds_11, NUM_LEDS);
-  */
-  
-  allLEDS(getArray(2), 0);
-  allLEDS(getArray(3), 0);
-  allLEDS(getArray(4), 0);
-  allLEDS(getArray(5), 0);
-  allLEDS(getArray(6), 0);
-  allLEDS(getArray(7), 0);
-  allLEDS(getArray(8), 0);
-  allLEDS(getArray(9), 0);
-  allLEDS(getArray(10), 0);
-  allLEDS(getArray(11), 0);
-  
-  LEDS.setBrightness(255);    
-  LEDS.show();
-}
-
 
 void allLEDS(CRGB _leds[NUM_LEDS], float _value){
   //Serial1.println(_value);
