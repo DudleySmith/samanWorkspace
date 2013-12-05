@@ -134,13 +134,18 @@ void samanNetwork::drawANode(ofxXbeeNode _nodeToDraw, ofPoint _pos, float _xSize
             
             oneAnim = m_aAnims.find(keyAnim);
             
-            if(oneAnim!=m_aAnims.end() && (*oneAnim).second.isAnimating()){
-                float   dropRatio = (*oneAnim).second.val();
-                ofPoint dropPosition = dropRatio*startPt + (1-dropRatio)*endPt;
-                
-                ofSetColor(ofColor::white);
-                if(dropRatio<1) ofCircle(dropPosition, 3);
-                
+            if(oneAnim!=m_aAnims.end()){
+                if((*oneAnim).second.isAnimating()){
+                    
+                    float   dropRatio = (*oneAnim).second.val();
+                    ofPoint dropPosition = dropRatio*startPt + (1-dropRatio)*endPt;
+                    
+                    ofLogVerbose() << "Drop Ratio=" << dropRatio << " Drop Position=" << dropPosition;
+                    
+                    ofSetColor(ofColor::white);
+                    if(dropRatio<1) ofCircle(dropPosition, 3);
+                    
+                }
             }
             
             
